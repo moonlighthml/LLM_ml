@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Bot, Send, Sparkles } from "lucide-react";
+import { Bot, RotateCcw, Send, Sparkles } from "lucide-react";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -20,16 +20,15 @@ type ChatResponse = {
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const welcomeMessage: ChatMessage = {
+  role: "assistant",
+  content: "你好，我是你的个人 LLM 工作台。你可以输入需要检索或对话的问题。",
+};
 
 export default function Home() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelId, setModelId] = useState("demo-local");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: "你好，我是你的个人 LLM 工作台。你可以输入需要检索或对话的问题。",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("搜索科比的个人主页");
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState("");
@@ -78,6 +77,11 @@ export default function Home() {
     }
   }
 
+  function resetChat() {
+    setMessages([welcomeMessage]);
+    setInput("");
+  }
+
   return (
     <main className="shell">
       <section className="topbar">
@@ -98,14 +102,19 @@ export default function Home() {
               <p className="eyebrow">对话</p>
               <h2>模型对话</h2>
             </div>
-            <select value={modelId} onChange={(event) => setModelId(event.target.value)} aria-label="选择模型">
-              {models.map((model) => (
-                <option key={model.model_id} value={model.model_id}>
-                  {model.label}
-                </option>
-              ))}
-              {models.length === 0 && <option value="demo-local">本地演示模型</option>}
-            </select>
+            <div className="panelActions">
+              <select value={modelId} onChange={(event) => setModelId(event.target.value)} aria-label="选择模型">
+                {models.map((model) => (
+                  <option key={model.model_id} value={model.model_id}>
+                    {model.label}
+                  </option>
+                ))}
+                {models.length === 0 && <option value="demo-local">本地演示模型</option>}
+              </select>
+              <button className="iconButton" type="button" onClick={resetChat} aria-label="新对话" title="新对话">
+                <RotateCcw size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="messages">

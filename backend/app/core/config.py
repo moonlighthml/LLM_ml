@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     llm_config_path: str = "backend/app/config/models.example.json"
     default_model_id: str = "demo-local"
     cors_origins_raw: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
+    gitee_ai_base_url: str = "https://ai.gitee.com/v1"
+    gitee_ai_token: str = ""
+    gitee_web_search_path: str = "/web-search"
 
     @property
     def cors_origins(self) -> list[str]:
@@ -15,4 +18,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

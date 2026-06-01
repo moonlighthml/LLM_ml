@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models.tools import WebSearchResponse, WebSearchResult
 
 
 client = TestClient(app)
@@ -36,7 +37,22 @@ def test_list_configured_skills() -> None:
     assert any(skill["tool"] == "search_web" for skill in skills)
 
 
-def test_chat_triggers_web_search_skill() -> None:
+def test_chat_triggers_web_search_skill(monkeypatch) -> None:
+    async def fake_search_web(request):
+        return WebSearchResponse(
+            query=request.query,
+            results=[
+                WebSearchResult(
+                    title="Kobe Bryant - NBA 官方资料页",
+                    url="https://www.nba.com/stats/player/977/career",
+                    snippet="NBA 官方球员资料页，包含 Kobe Bryant 的职业生涯数据与基础信息。",
+                    source="测试替身",
+                )
+            ],
+            note="测试替身结果。",
+        )
+
+    monkeypatch.setattr("app.services.chat_orchestrator.search_web", fake_search_web)
     response = client.post(
         "/api/chat",
         json={"messages": [{"role": "user", "content": "搜索科比的个人主页"}], "model_id": "demo-local"},
