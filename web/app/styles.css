@@ -238,6 +238,12 @@ button:disabled {
   font-weight: 700;
 }
 
+.emptyText {
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 12px 0;
+}
+
 @media (max-width: 980px) {
   .workspace {
     flex-direction: column;
@@ -270,4 +276,3 @@ button:disabled {
     align-items: stretch;
   }
 }
-

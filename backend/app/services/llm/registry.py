@@ -30,7 +30,7 @@ class LLMRegistry:
 
         if not path.exists():
             return settings.default_model_id, [
-                ModelConfig(provider="demo", model_id="demo-local", label="Demo Local", enabled=True)
+                ModelConfig(provider="demo", model_id="demo-local", label="本地演示模型", enabled=True)
             ]
 
         data = json.loads(path.read_text(encoding="utf-8"))

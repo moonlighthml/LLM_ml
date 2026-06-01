@@ -18,3 +18,14 @@ class SkillSearchResponse(BaseModel):
     query: str
     results: list[SkillResult]
 
+
+class ConfiguredSkill(BaseModel):
+    name: str
+    description: str
+    tags: list[str] = Field(default_factory=list)
+    tool: str
+    triggers: list[str] = Field(default_factory=list)
+
+
+class SkillListResponse(BaseModel):
+    skills: list[ConfiguredSkill]

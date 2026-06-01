@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
 
 from app.models.chat import ChatRequest, ChatResponse
-from app.models.skills import SkillSearchRequest, SkillSearchResponse
+from app.models.skills import SkillListResponse, SkillSearchRequest, SkillSearchResponse
 from app.models.tools import WebSearchRequest, WebSearchResponse
+from app.services.chat_orchestrator import run_chat
 from app.services.llm.registry import llm_registry
+from app.services.skills.registry import list_configured_skills
 from app.services.skills.search import search_skills
 from app.services.tools.web_search import search_web
 
@@ -26,7 +28,7 @@ async def models() -> dict[str, object]:
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     try:
-        return await llm_registry.chat(request)
+        return await run_chat(request)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -36,7 +38,11 @@ async def skills_search(request: SkillSearchRequest) -> SkillSearchResponse:
     return search_skills(request)
 
 
+@router.get("/skills", response_model=SkillListResponse)
+async def skills() -> SkillListResponse:
+    return list_configured_skills()
+
+
 @router.post("/tools/search-web", response_model=WebSearchResponse)
 async def web_search(request: WebSearchRequest) -> WebSearchResponse:
     return await search_web(request)
-
