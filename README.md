@@ -42,7 +42,7 @@ For local paid/API testing, keep secrets in `.env` and optionally point `LLM_CON
 Known OpenAI-compatible provider bases:
 
 - DeepSeek: `https://api.deepseek.com`
-- Gitee AI serverless: `https://ai.gitee.com/v1`
+- Gitee AI serverless: `https://ai.gitee.com/v1`; current default local model is `DeepSeek-R1-Distill-Qwen-7B`.
 
 ## API Surface
 
