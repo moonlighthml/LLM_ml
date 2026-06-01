@@ -86,6 +86,11 @@ h2 {
   gap: 20px;
 }
 
+.workspace.single {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
 .chatPanel,
 .sidePanel {
   min-height: calc(100vh - 120px);

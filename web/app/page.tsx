@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Bot, LinkIcon, Send, Sparkles, Wrench } from "lucide-react";
+import { Bot, Send, Sparkles } from "lucide-react";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -14,34 +14,9 @@ type ModelInfo = {
   label: string;
 };
 
-type ConfiguredSkill = {
-  name: string;
-  description: string;
-  tags: string[];
-  tool: string;
-  triggers: string[];
-};
-
-type Reference = {
-  title: string;
-  url: string;
-  snippet: string;
-};
-
-type ToolCall = {
-  name: string;
-  input: Record<string, unknown>;
-  output: {
-    note?: string;
-    results?: Reference[];
-  };
-};
-
 type ChatResponse = {
   model_id: string;
   content: string;
-  tool_calls: ToolCall[];
-  references: Reference[];
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
@@ -49,7 +24,6 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:800
 export default function Home() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelId, setModelId] = useState("demo-local");
-  const [skills, setSkills] = useState<ConfiguredSkill[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -57,8 +31,6 @@ export default function Home() {
     },
   ]);
   const [input, setInput] = useState("搜索科比的个人主页");
-  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
-  const [references, setReferences] = useState<Reference[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState("");
 
@@ -76,11 +48,6 @@ export default function Home() {
         setModels([]);
         setConnectionError(`无法连接后端：${error.message}`);
       });
-
-    fetch(`${apiBaseUrl}/api/skills`)
-      .then((response) => response.json())
-      .then((data) => setSkills(data.skills || []))
-      .catch(() => setSkills([]));
   }, []);
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -89,14 +56,9 @@ export default function Home() {
     if (!trimmed || isSending) return;
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
-    setMessages([
-      ...nextMessages,
-      { role: "assistant", content: `正在判断是否需要调用 skill，并准备调用模型 ${modelId}...` },
-    ]);
+    setMessages([...nextMessages, { role: "assistant", content: `正在调用模型 ${modelId}...` }]);
     setInput("");
     setIsSending(true);
-    setToolCalls([]);
-    setReferences([]);
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/chat`, {
@@ -109,8 +71,6 @@ export default function Home() {
       });
       const data = (await response.json()) as ChatResponse;
       setMessages([...nextMessages, { role: "assistant", content: data.content || "没有返回内容。" }]);
-      setToolCalls(data.tool_calls || []);
-      setReferences(data.references || []);
     } catch {
       setMessages([...nextMessages, { role: "assistant", content: "后端暂时不可用，请确认 FastAPI 已启动。" }]);
     } finally {
@@ -131,12 +91,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="workspace">
+      <section className="workspace single">
         <div className="chatPanel">
           <div className="panelHeader">
             <div>
               <p className="eyebrow">对话</p>
-              <h2>模型与 Skill 联动</h2>
+              <h2>模型对话</h2>
             </div>
             <select value={modelId} onChange={(event) => setModelId(event.target.value)} aria-label="选择模型">
               {models.map((model) => (
@@ -168,57 +128,6 @@ export default function Home() {
             </button>
           </form>
         </div>
-
-        <aside className="sidePanel">
-          <div className="toolBlock">
-            <div className="panelHeader compact">
-              <div>
-                <p className="eyebrow">Skills</p>
-                <h2>已配置 Skill</h2>
-              </div>
-              <Wrench size={18} />
-            </div>
-            <div className="results">
-              {skills.map((skill) => (
-                <article className="resultItem" key={skill.name}>
-                  <strong>{skill.name}</strong>
-                  <p>{skill.description}</p>
-                  <span>工具：{skill.tool}</span>
-                </article>
-              ))}
-              {skills.length === 0 && <p className="emptyText">暂无已加载的 skill。</p>}
-            </div>
-          </div>
-
-          <div className="toolBlock">
-            <div className="panelHeader compact">
-              <div>
-                <p className="eyebrow">调用过程</p>
-                <h2>本轮工具结果</h2>
-              </div>
-              <LinkIcon size={18} />
-            </div>
-            <div className="results">
-              {toolCalls.map((call, index) => (
-                <article className="resultItem" key={`${call.name}-${index}`}>
-                  <strong>{call.name}</strong>
-                  <p>{call.output.note || "工具已执行。"}</p>
-                </article>
-              ))}
-              {references.map((reference) => (
-                <article className="resultItem" key={reference.url}>
-                  <a href={reference.url} target="_blank" rel="noreferrer">
-                    {reference.title}
-                  </a>
-                  <p>{reference.snippet}</p>
-                </article>
-              ))}
-              {toolCalls.length === 0 && references.length === 0 && (
-                <p className="emptyText">当对话触发 skill 后，这里会显示工具调用和候选链接。</p>
-              )}
-            </div>
-          </div>
-        </aside>
       </section>
     </main>
   );
