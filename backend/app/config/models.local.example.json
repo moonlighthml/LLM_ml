@@ -1,5 +1,5 @@
 {
-  "default_model_id": "demo-local",
+  "default_model_id": "deepseek-v4-flash",
   "models": [
     {
       "provider": "demo",
@@ -15,18 +15,6 @@
     },
     {
       "provider": "openai-compatible",
-      "model_id": "gpt-placeholder",
-      "label": "OpenAI-Compatible Placeholder",
-      "base_url": "https://api.openai.com/v1",
-      "api_key_env": "OPENAI_API_KEY",
-      "stream": true,
-      "tools": true,
-      "temperature": 0.7,
-      "max_tokens": 4096,
-      "enabled": false
-    },
-    {
-      "provider": "openai-compatible",
       "model_id": "deepseek-v4-flash",
       "label": "DeepSeek V4 Flash",
       "base_url": "https://api.deepseek.com",
@@ -35,7 +23,7 @@
       "tools": false,
       "temperature": 0.7,
       "max_tokens": 2048,
-      "enabled": false
+      "enabled": true
     },
     {
       "provider": "openai-compatible",

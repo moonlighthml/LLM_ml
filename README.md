@@ -37,6 +37,13 @@ Copy `.env.example` to `.env` and fill provider secrets locally. Do not commit `
 
 Model definitions live in `backend/app/config/models.example.json` by default. Add new providers by adding model config and, when needed, a provider adapter under `backend/app/services/llm/`.
 
+For local paid/API testing, keep secrets in `.env` and optionally point `LLM_CONFIG_PATH` to an ignored `backend/app/config/models.local.json`.
+
+Known OpenAI-compatible provider bases:
+
+- DeepSeek: `https://api.deepseek.com`
+- Gitee AI serverless: `https://ai.gitee.com/v1`
+
 ## API Surface
 
 - `GET /api/health`
@@ -46,4 +53,3 @@ Model definitions live in `backend/app/config/models.example.json` by default. A
 - `POST /api/tools/search-web`
 
 The current default model `demo-local` is a local echo adapter so the workbench can run before real LLM API keys are provided.
-
