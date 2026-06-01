@@ -25,6 +25,7 @@ class ConfiguredSkill(BaseModel):
     tags: list[str] = Field(default_factory=list)
     tool: str
     triggers: list[str] = Field(default_factory=list)
+    instructions: str = ""
 
 
 class SkillListResponse(BaseModel):

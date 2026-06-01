@@ -1,7 +1,7 @@
 from app.models.chat import ChatMessage, ChatRequest, ChatResponse
 from app.models.tools import WebSearchRequest
 from app.services.llm.registry import llm_registry
-from app.services.skills.registry import should_use_web_search_skill
+from app.services.skills.registry import get_web_research_skill, should_use_web_search_skill
 from app.services.tools.web_search import search_web
 
 
@@ -14,17 +14,20 @@ async def run_chat(request: ChatRequest) -> ChatResponse:
     augmented_messages = list(request.messages)
 
     if should_use_web_search_skill(user_text):
+        skill = get_web_research_skill()
         search_response = await search_web(WebSearchRequest(query=user_text, limit=5))
         search_context = "\n".join(
             f"- {result.title}\n  链接：{result.url}\n  摘要：{result.snippet}"
             for result in search_response.results
         )
+        skill_instructions = skill.instructions if skill else "进行网页检索，并优先识别官方主页或权威资料页。"
         augmented_messages = [
             ChatMessage(
                 role="system",
                 content=(
-                    "你具备网页检索 skill。后端已经在内部完成检索，"
-                    "请自然地基于检索结果回答用户，不要暴露内部工具调用流程。"
+                    "你已配置 web-research-homepages skill。"
+                    "该 skill 只用于内部增强回答，不要向用户暴露工具调用流程。\n\n"
+                    f"{skill_instructions}"
                 ),
             ),
             *request.messages,
