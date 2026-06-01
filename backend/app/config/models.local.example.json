@@ -4,7 +4,7 @@
     {
       "provider": "demo",
       "model_id": "demo-local",
-      "label": "Demo Local",
+      "label": "本地演示模型",
       "base_url": null,
       "api_key_env": null,
       "stream": false,
@@ -28,7 +28,7 @@
     {
       "provider": "openai-compatible",
       "model_id": "DeepSeek-R1-Distill-Qwen-7B",
-      "label": "Gitee DeepSeek R1 Distill Qwen 7B",
+      "label": "Gitee DeepSeek R1 蒸馏 Qwen 7B",
       "base_url": "https://ai.gitee.com/v1",
       "api_key_env": "GITEE_AI_TOKEN",
       "stream": true,

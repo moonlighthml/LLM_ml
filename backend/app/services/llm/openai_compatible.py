@@ -13,11 +13,11 @@ class OpenAICompatibleProvider(LLMProvider):
 
     async def chat(self, request: ChatRequest, model: ModelConfig) -> ChatResponse:
         if not model.base_url or not model.api_key_env:
-            raise ValueError("OpenAI-compatible model requires base_url and api_key_env.")
+            raise ValueError("OpenAI 兼容模型需要配置 base_url 和 api_key_env。")
 
         api_key = os.getenv(model.api_key_env)
         if not api_key:
-            raise ValueError(f"Missing API key environment variable: {model.api_key_env}")
+            raise ValueError(f"缺少 API 密钥环境变量：{model.api_key_env}")
 
         payload: dict[str, Any] = {
             "model": model.model_id,
@@ -38,4 +38,3 @@ class OpenAICompatibleProvider(LLMProvider):
 
         content = data["choices"][0]["message"].get("content", "")
         return ChatResponse(model_id=model.model_id, content=content)
-

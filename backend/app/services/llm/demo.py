@@ -12,8 +12,7 @@ class DemoProvider(LLMProvider):
             "",
         )
         content = (
-            "Demo adapter response. Real LLM providers can be added without changing the chat API.\n\n"
-            f"User said: {last_user_message}"
+            "本地演示适配器响应。后续可以在不改动聊天 API 的前提下新增真实 LLM 供应商。\n\n"
+            f"用户输入：{last_user_message}"
         )
         return ChatResponse(model_id=model.model_id, content=content)
-

@@ -35,7 +35,7 @@ export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "你好，我是你的个人 LLM 工作台骨架。现在可以先用 demo 模型验证前后端链路。",
+      content: "你好，我是你的个人 LLM 工作台。现在可以先用演示模型验证前后端链路。",
     },
   ]);
   const [input, setInput] = useState("");
@@ -45,7 +45,7 @@ export default function Home() {
   const [webResults, setWebResults] = useState<WebResult[]>([]);
   const [isSending, setIsSending] = useState(false);
 
-  const apiStatus = useMemo(() => (models.length > 0 ? "Backend connected" : "Waiting for backend"), [models]);
+  const apiStatus = useMemo(() => (models.length > 0 ? "后端已连接" : "等待后端连接"), [models]);
 
   useEffect(() => {
     fetch(`${apiBaseUrl}/api/models`)
@@ -77,7 +77,7 @@ export default function Home() {
         }),
       });
       const data = await response.json();
-      setMessages([...nextMessages, { role: "assistant", content: data.content || "No response content." }]);
+      setMessages([...nextMessages, { role: "assistant", content: data.content || "没有返回内容。" }]);
     } catch {
       setMessages([...nextMessages, { role: "assistant", content: "后端暂时不可用，请确认 FastAPI 已启动。" }]);
     } finally {
@@ -124,8 +124,8 @@ export default function Home() {
         <div className="chatPanel">
           <div className="panelHeader">
             <div>
-              <p className="eyebrow">Chat</p>
-              <h2>对话</h2>
+              <p className="eyebrow">对话</p>
+              <h2>聊天</h2>
             </div>
             <select value={modelId} onChange={(event) => setModelId(event.target.value)} aria-label="选择模型">
               {models.map((model) => (
@@ -133,7 +133,7 @@ export default function Home() {
                   {model.label}
                 </option>
               ))}
-              {models.length === 0 && <option value="demo-local">Demo Local</option>}
+              {models.length === 0 && <option value="demo-local">本地演示模型</option>}
             </select>
           </div>
 
@@ -162,7 +162,7 @@ export default function Home() {
           <div className="toolBlock">
             <div className="panelHeader compact">
               <div>
-                <p className="eyebrow">Skills</p>
+                <p className="eyebrow">Skill</p>
                 <h2>检索</h2>
               </div>
               <Search size={18} />
@@ -171,9 +171,9 @@ export default function Home() {
               <input
                 value={skillQuery}
                 onChange={(event) => setSkillQuery(event.target.value)}
-                placeholder="homepage search"
+                placeholder="例如：个人主页搜索"
               />
-              <button type="submit">Search</button>
+              <button type="submit">检索</button>
             </form>
             <div className="results">
               {skills.map((skill) => (
@@ -189,7 +189,7 @@ export default function Home() {
           <div className="toolBlock">
             <div className="panelHeader compact">
               <div>
-                <p className="eyebrow">Tools</p>
+                <p className="eyebrow">工具</p>
                 <h2>网页搜索</h2>
               </div>
               <LinkIcon size={18} />
@@ -200,7 +200,7 @@ export default function Home() {
                 onChange={(event) => setWebQuery(event.target.value)}
                 placeholder="某个人的个人主页"
               />
-              <button type="submit">Search</button>
+              <button type="submit">搜索</button>
             </form>
             <div className="results">
               {webResults.map((result) => (
@@ -218,4 +218,3 @@ export default function Home() {
     </main>
   );
 }
-

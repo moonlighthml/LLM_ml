@@ -1,17 +1,17 @@
 # LLM_ml
 
-Personal LLM workbench for chat, skill retrieval, and tool-style web search.
+个人 LLM 工作台，用于对话、skill 检索和工具式网页搜索。
 
-## Stack
+## 技术栈
 
-- `backend/`: Python FastAPI service for LLM providers, skill search, and tool APIs.
-- `web/`: Next.js + React frontend workbench.
-- `skills/`: public sample skill files.
-- `docs/`: local-only project notes, intentionally ignored by Git.
+- `backend/`：Python FastAPI 后端，负责模型供应商、skill 检索和工具接口。
+- `web/`：Next.js + React 前端工作台。
+- `skills/`：可公开提交的 skill 样例文件。
+- `docs/`：仅本地使用的项目说明，已被 Git 忽略。
 
-## Quick Start
+## 快速启动
 
-Backend:
+后端：
 
 ```bash
 cd backend
@@ -21,7 +21,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend:
+前端：
 
 ```bash
 cd web
@@ -29,22 +29,22 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+打开 `http://localhost:3000`。
 
-## Configuration
+## 配置说明
 
-Copy `.env.example` to `.env` and fill provider secrets locally. Do not commit `.env`.
+复制 `.env.example` 为 `.env`，并在本地填写模型供应商密钥。不要提交 `.env`。
 
-Model definitions live in `backend/app/config/models.example.json` by default. Add new providers by adding model config and, when needed, a provider adapter under `backend/app/services/llm/`.
+默认模型定义位于 `backend/app/config/models.example.json`。新增模型时优先增加模型配置；如果接口格式不同，再在 `backend/app/services/llm/` 下新增供应商适配器。
 
-For local paid/API testing, keep secrets in `.env` and optionally point `LLM_CONFIG_PATH` to an ignored `backend/app/config/models.local.json`.
+本地付费 API 测试时，密钥只放在 `.env`；也可以把 `LLM_CONFIG_PATH` 指向已被忽略的 `backend/app/config/models.local.json`。
 
-Known OpenAI-compatible provider bases:
+当前已预留的 OpenAI 兼容接口：
 
 - DeepSeek: `https://api.deepseek.com`
-- Gitee AI serverless: `https://ai.gitee.com/v1`; current default local model is `DeepSeek-R1-Distill-Qwen-7B`.
+- Gitee 模力方舟：`https://ai.gitee.com/v1`；当前本地默认模型是 `DeepSeek-R1-Distill-Qwen-7B`。
 
-## API Surface
+## 后端接口
 
 - `GET /api/health`
 - `GET /api/models`
@@ -52,4 +52,4 @@ Known OpenAI-compatible provider bases:
 - `POST /api/skills/search`
 - `POST /api/tools/search-web`
 
-The current default model `demo-local` is a local echo adapter so the workbench can run before real LLM API keys are provided.
+公开模板里的默认模型 `demo-local` 是本地回显适配器，用来在没有真实 LLM 密钥时验证前后端链路。

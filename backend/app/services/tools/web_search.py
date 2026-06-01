@@ -6,14 +6,13 @@ async def search_web(request: WebSearchRequest) -> WebSearchResponse:
         query=request.query,
         results=[
             WebSearchResult(
-                title="Web search provider not configured",
+                title="尚未配置网页搜索供应商",
                 url="https://github.com/moonlighthml/LLM_ml",
                 snippet=(
-                    "This endpoint is intentionally reserved for a future search provider. "
-                    "Add a provider adapter here when a search API key is available."
+                    "该接口目前是为后续网页搜索供应商预留的占位实现。"
+                    "拿到搜索 API 密钥后，可以在这里新增供应商适配器。"
                 ),
             )
         ][: request.limit],
-        note="Placeholder response. No live web search API is configured yet.",
+        note="占位响应：当前尚未配置真实网页搜索 API。",
     )
-

@@ -42,11 +42,11 @@ class LLMRegistry:
         model_id = request.model_id or self.default_model_id
         model = next((item for item in self.models if item.model_id == model_id), None)
         if model is None:
-            raise KeyError(f"Unknown model_id: {model_id}")
+            raise KeyError(f"未知 model_id：{model_id}")
 
         provider = self.providers.get(model.provider)
         if provider is None:
-            raise KeyError(f"Unknown provider: {model.provider}")
+            raise KeyError(f"未知供应商：{model.provider}")
 
         return await provider.chat(request, model)
 

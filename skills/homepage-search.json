@@ -1,7 +1,6 @@
 {
   "name": "homepage-search",
-  "description": "Find a person's likely official homepage or profile and return the most relevant link with a short reason.",
-  "tags": ["search", "people", "homepage", "links"],
-  "instructions": "Use web search with the person's name and disambiguating context. Prefer official personal sites, university pages, company profile pages, or verified social profiles."
+  "description": "查找某个人可能的官方网站、个人主页或公开资料页，并返回最相关链接和简短理由。",
+  "tags": ["搜索", "人物", "个人主页", "链接"],
+  "instructions": "使用人物姓名和可消歧的上下文进行网页搜索。优先选择官方网站、个人站点、高校主页、公司资料页或已验证的社交主页。"
 }
-
