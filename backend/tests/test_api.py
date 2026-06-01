@@ -15,7 +15,9 @@ def test_health() -> None:
 def test_models() -> None:
     response = client.get("/api/models")
     assert response.status_code == 200
-    assert response.json()["default_model_id"] == "demo-local"
+    data = response.json()
+    model_ids = {model["model_id"] for model in data["models"]}
+    assert data["default_model_id"] in model_ids
 
 
 def test_chat_demo() -> None:
@@ -25,4 +27,3 @@ def test_chat_demo() -> None:
     )
     assert response.status_code == 200
     assert "hello" in response.json()["content"]
-

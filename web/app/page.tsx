@@ -27,7 +27,7 @@ type WebResult = {
   snippet: string;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export default function Home() {
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -44,6 +44,7 @@ export default function Home() {
   const [webQuery, setWebQuery] = useState("");
   const [webResults, setWebResults] = useState<WebResult[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
 
   const apiStatus = useMemo(() => (models.length > 0 ? "后端已连接" : "等待后端连接"), [models]);
 
@@ -54,7 +55,10 @@ export default function Home() {
         setModels(data.models || []);
         setModelId(data.default_model_id || "demo-local");
       })
-      .catch(() => setModels([]));
+      .catch((error: Error) => {
+        setModels([]);
+        setConnectionError(`无法连接后端：${error.message}`);
+      });
   }, []);
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -63,7 +67,11 @@ export default function Home() {
     if (!trimmed || isSending) return;
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
-    setMessages(nextMessages);
+    const pendingMessages: ChatMessage[] = [
+      ...nextMessages,
+      { role: "assistant", content: `正在调用模型 ${modelId}，请稍候...` },
+    ];
+    setMessages(pendingMessages);
     setInput("");
     setIsSending(true);
 
@@ -116,7 +124,7 @@ export default function Home() {
         </div>
         <div className="status">
           <Sparkles size={16} />
-          <span>{apiStatus}</span>
+          <span>{connectionError || apiStatus}</span>
         </div>
       </section>
 
