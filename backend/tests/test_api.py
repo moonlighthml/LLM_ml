@@ -1,7 +1,13 @@
+import asyncio
+
+import httpx
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.models.tools import WebSearchResponse, WebSearchResult
+from app.models.chat import ChatResponse
+from app.models.tools import WebSearchRequest, WebSearchResponse, WebSearchResult
+from app.services.search_logging import extract_thinking_blocks, model_output_record
+from app.services.tools.web_search import _search_duckduckgo
 
 
 client = TestClient(app)
@@ -43,13 +49,13 @@ def test_chat_triggers_web_search_skill(monkeypatch) -> None:
             query=request.query,
             results=[
                 WebSearchResult(
-                    title="Kobe Bryant - NBA 官方资料页",
+                    title="Kobe Bryant - NBA official profile",
                     url="https://www.nba.com/stats/player/977/career",
-                    snippet="NBA 官方球员资料页，包含 Kobe Bryant 的职业生涯数据与基础信息。",
-                    source="测试替身",
+                    snippet="NBA official player profile with career statistics and basic information.",
+                    source="test double",
                 )
             ],
-            note="测试替身结果。",
+            note="test double result.",
         )
 
     monkeypatch.setattr("app.services.chat_orchestrator.search_web", fake_search_web)
@@ -62,3 +68,80 @@ def test_chat_triggers_web_search_skill(monkeypatch) -> None:
     assert "Kobe Bryant" in data["content"]
     assert data["tool_calls"] == []
     assert data["references"] == []
+
+
+def test_search_run_logs_model_raw_output(monkeypatch) -> None:
+    captured = {}
+
+    async def fake_search_web(request):
+        return WebSearchResponse(
+            query=request.query,
+            results=[
+                WebSearchResult(
+                    title="Kobe Bryant - Wikipedia",
+                    url="https://en.wikipedia.org/wiki/Kobe_Bryant",
+                    snippet="Kobe Bryant encyclopedia profile.",
+                    source="test double",
+                )
+            ],
+            note="test double result.",
+        )
+
+    def fake_append_search_run_log(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("app.services.chat_orchestrator.search_web", fake_search_web)
+    monkeypatch.setattr("app.services.chat_orchestrator.append_search_run_log", fake_append_search_run_log)
+
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "检索科比"}], "model_id": "demo-local"},
+    )
+
+    assert response.status_code == 200
+    assert captured["user_text"] == "检索科比"
+    assert captured["search_response"].results[0].url == "https://en.wikipedia.org/wiki/Kobe_Bryant"
+    assert captured["recommended_homepage"]["url"] == "https://en.wikipedia.org/wiki/Kobe_Bryant"
+    assert captured["model_outputs"][0]["raw_output"]
+    assert "thinking" in captured["model_outputs"][0]
+
+
+def test_model_output_record_extracts_thinking() -> None:
+    response = ChatResponse(model_id="test-model", content="<think>hidden reasoning</think>\nfinal answer")
+    record = model_output_record(response)
+
+    assert extract_thinking_blocks(response.content) == ["hidden reasoning"]
+    assert record["raw_output"] == response.content
+    assert record["thinking"] == ["hidden reasoning"]
+
+
+def test_duckduckgo_html_parser(monkeypatch) -> None:
+    html = """
+    <html>
+      <body>
+        <a class="result__a" href="/l/?uddg=https%3A%2F%2Fexample.com%2Fprofile">Example Profile</a>
+        <a class="result__snippet">Official profile snippet.</a>
+      </body>
+    </html>
+    """
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args) -> None:
+            return None
+
+        async def get(self, *args, **kwargs):
+            return httpx.Response(200, text=html, request=httpx.Request("GET", "https://html.duckduckgo.com/html/"))
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeClient)
+
+    response = asyncio.run(_search_duckduckgo(WebSearchRequest(query="example", limit=1)))
+    assert response.note == "Searched DuckDuckGo."
+    assert response.results[0].title == "Example Profile"
+    assert response.results[0].url == "https://example.com/profile"
+    assert response.results[0].snippet == "Official profile snippet."

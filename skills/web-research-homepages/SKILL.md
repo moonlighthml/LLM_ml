@@ -1,56 +1,57 @@
 ---
 name: web-research-homepages
-description: 联网检索当前、可溯源的信息，并提炼简洁结论。当用户要求查找、浏览、核实、研究或获取在线信息时使用；当主题可能有时效性或不确定性时使用；当需要引用链接、来源归因或实体背景时使用。对于人物、公司、组织、品牌、产品所有者、创始人、高管、公众人物或企业相关搜索，需要额外识别并返回最合适的官方个人主页、公司网站或权威资料页。
+description: 联网检索当前、可溯源的信息，并提炼简洁结论。当用户要求查找、浏览、核实、研究或获取在线信息时使用；当主题可能有时效性或不确定性时使用；当需要引用链接、来源归因或实体背景时使用。对于人物、公司、组织、品牌、产品所有者、创始人、高管、公众人物或企业相关搜索，需要额外识别并返回最合适的官方个人主页、公司网站、权威资料页或百科资料页。
 ---
 
-# 网页检索与官方主页识别
+# Web Search And Homepage Identification
 
-## 工作流
+## Workflow
 
-1. 只有当查询目标非常模糊、容易识别成错误实体时，才先澄清；否则直接检索。
-2. 对当前事实、推荐、价格、法规、公司或人物详情，以及任何可能变化的信息使用网页检索。
-3. 优先使用一手和权威来源：官方网站、个人域名、公司网站、监管文件、机构资料页、可信数据库和直接出版物。没有一手来源时，可使用二手来源补充背景。
-4. 重要事实尽量用至少两个独立来源交叉验证，尤其是身份、职务、隶属关系、日期，以及关于人物或公司的主张。
-5. 返回所有使用过的来源链接。结论如果是根据来源推断出来的，需要明确说明。
+1. Search directly unless the query target is too ambiguous or likely to refer to multiple entities.
+2. Use web search for current facts, recommendations, prices, rules, company or person details, and any information that may have changed.
+3. Prefer primary and authoritative sources: official websites, personal domains, company websites, regulator filings, institutional profiles, reliable databases, direct publications, and encyclopedia pages.
+4. Cross-check important facts with at least two independent sources when possible, especially identity, job titles, affiliations, dates, and claims about people or companies.
+5. Return links for the sources used. Clearly label conclusions that are inferred from sources.
 
-## 实体主页
+## Homepage And Source Priority
 
-当检索目标是人物或企业时，回答中需要包含 `官方主页` 字段。
+When the target is a person or business, include an `官方主页` field in the answer.
 
-人物主页优先级：
+Person source priority:
 
-1. 由本人控制的个人域名、个人网站或作品集。
-2. 所属雇主、高校、实验室、出版社、基金会或政府机构的官方资料页。
-3. 如果没有个人或机构主页，再考虑已验证的社交或资料页。
+1. Personal domain, personal website, portfolio, or site controlled by the person.
+2. Official profile from an employer, university, lab, publisher, foundation, league, team, or government institution.
+3. Encyclopedia pages such as Wikipedia, 百度百科, or Britannica when no reliable official page is available.
+4. Verified social or profile page only when no personal, institutional, or encyclopedia page is available.
 
-企业主页优先级：
+Company source priority:
 
-1. 官方公司或组织网站。
-2. 企业拥有的官方产品或品牌网站。
-3. 如果没有官方站点，再考虑监管机构、交易所、应用商店或市场资料页。
+1. Official company or organization website.
+2. Official product or brand site owned by the company.
+3. Regulator, exchange, app store, marketplace profile, or encyclopedia page when no official site is available.
 
-不要把采集目录、SEO 资料页、销售线索数据库、粉丝页或无关社交账号当作官方主页。如果找不到可靠主页，写 `官方主页：未找到`，并简要说明检查了什么。
+Do not treat directories, SEO pages, sales-lead databases, fan pages, or unrelated social accounts as official homepages. If no reliable homepage or acceptable encyclopedia page is found, write `官方主页：未找到` and briefly say what was checked.
 
-## 输出
+## Output
 
-除非用户另有要求，使用用户的语言回答。除非任务需要深入报告，否则保持简洁。
+Answer in the user's language unless they ask otherwise. Keep the answer concise unless the task calls for a deeper report.
 
-通用检索回答包括：
+General search answers should include:
 
-- `摘要`：直接答案或关键发现。
-- `详情`：相关证据、日期、注意事项和比较。
-- `来源`：带链接的来源列表。
+- `摘要`: the direct answer or key findings.
+- `详情`: relevant evidence, dates, caveats, and comparisons.
+- `来源`: linked sources.
 
-人物或企业检索回答包括：
+Person or company search answers should include:
 
-- `官方主页`：最佳官方 URL 或 `未找到`。
-- `身份核验`：当存在同名风险时，用一句话说明为什么这是正确的人或公司。
-- `摘要`、`详情` 和 `来源`。
+- `官方主页`: the best official URL, acceptable encyclopedia URL, or `未找到`.
+- `身份核验`: one sentence explaining why this is the correct person or company when there is same-name risk.
+- `摘要`, `详情`, and `来源`.
 
-## 质量规则
+## Quality Rules
 
-- 区分官方来源、媒体报道、数据库和评论内容。
-- 不夸大不确定事实；必要时使用“看起来”“根据”“我无法核实”等措辞。
-- 对近期或时效性信息保留精确日期。
-- 如果来源冲突，说明冲突，而不是抹平差异。
-- 尊重版权限制：只引用短摘录，其余内容用总结。
+- Distinguish official sources, media reports, databases, encyclopedia pages, and opinion content.
+- Do not overstate uncertain facts.
+- Preserve exact dates for recent or time-sensitive information.
+- If sources conflict, say so instead of smoothing over the difference.
+- Respect copyright limits: use short excerpts only, and summarize the rest.

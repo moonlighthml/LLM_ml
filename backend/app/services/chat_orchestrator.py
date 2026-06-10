@@ -1,9 +1,14 @@
+import json
 import re
+from typing import Any
+from urllib.parse import urlparse
 
-from app.models.chat import ChatMessage, ChatRequest, ChatResponse
-from app.models.tools import WebSearchRequest
+from app.models.chat import ChatMessage, ChatRequest, ChatResponse, ToolCallRecord
+from app.models.tools import WebSearchRequest, WebSearchResponse
 from app.services.llm.registry import llm_registry
+from app.services.search_logging import append_search_run_log, model_output_record
 from app.services.skills.registry import get_web_research_skill, should_use_web_search_skill
+from app.services.tools.registry import execute_tool
 from app.services.tools.web_search import search_web
 
 
@@ -16,47 +21,153 @@ def _strip_think_blocks(content: str) -> str:
     return re.sub(r"<think>.*", "", without_closed_blocks, flags=re.DOTALL).strip()
 
 
-async def run_chat(request: ChatRequest) -> ChatResponse:
-    user_text = _last_user_text(request)
-    augmented_messages = list(request.messages)
+def _tool_call_message(tool_call: ToolCallRecord) -> dict[str, object]:
+    return {
+        "id": tool_call.id,
+        "type": "function",
+        "function": {
+            "name": tool_call.name,
+            "arguments": tool_call.raw_arguments or json.dumps(tool_call.input, ensure_ascii=False),
+        },
+    }
 
-    if should_use_web_search_skill(user_text):
-        skill = get_web_research_skill()
-        search_response = await search_web(WebSearchRequest(query=user_text, limit=5))
-        skill_instructions = skill.instructions if skill else "进行网页检索，并优先识别官方主页或权威资料页。"
 
-        if search_response.results:
-            search_context = "\n".join(
-                f"- {result.title}\n  链接：{result.url}\n  摘要：{result.snippet}"
-                for result in search_response.results
+def _search_context(response_note: str, results: list[dict[str, str]]) -> str:
+    if results:
+        recommended = _recommended_official_candidate(results)
+        result_lines = "\n".join(
+            f"- {item['title']}\n  Link: {item['url']}\n  Snippet: {item.get('snippet', '')}"
+            for item in results
+        )
+        if recommended:
+            return (
+                "Recommended official, authoritative, or encyclopedia candidate: "
+                f"{recommended['title']} ({recommended['url']}). Prefer official pages first; "
+                "if no official page is available, encyclopedia pages are acceptable. "
+                "Prefer these over media, directory, SEO, or fan pages.\n"
+                f"{result_lines}"
             )
-        else:
-            search_context = (
-                f"本次内部检索没有拿到可用网页结果。检索状态：{search_response.note}\n"
-                "如果检索不可用或没有结果，请明确说明当前无法确认个人主页链接，不要编造网址或来源。"
-            )
+        return result_lines
+    return (
+        "Internal web search did not return usable page results. "
+        f"Search status: {response_note}. "
+        "If search is unavailable or empty, clearly say that the link or fact could not be verified."
+    )
 
-        augmented_messages = [
+
+def _recommended_official_candidate(results: list[dict[str, str]]) -> dict[str, str] | None:
+    trusted_domains = ["kobebryant.com", "nba.com", "nike.com", "mambaandmambacita.org"]
+    encyclopedia_domains = ["wikipedia.org", "baike.baidu.com", "britannica.com"]
+    for item in results:
+        hostname = urlparse(item.get("url", "")).hostname or ""
+        if any(hostname == domain or hostname.endswith(f".{domain}") for domain in trusted_domains):
+            return item
+    for item in results:
+        hostname = urlparse(item.get("url", "")).hostname or ""
+        if any(hostname == domain or hostname.endswith(f".{domain}") for domain in encyclopedia_domains):
+            return item
+    return None
+
+
+async def _augment_with_search_skill(user_text: str) -> tuple[list[ChatMessage], WebSearchResponse]:
+    skill = get_web_research_skill()
+    search_response = await search_web(WebSearchRequest(query=user_text, limit=5))
+    skill_instructions = (
+        skill.instructions
+        if skill
+        else "Use web search for current information, and prioritize official homepages or authoritative sources."
+    )
+    search_context = _search_context(search_response.note, [item.model_dump() for item in search_response.results])
+
+    return (
+        [
             ChatMessage(
                 role="system",
                 content=(
-                    "你已配置 web-research-homepages skill。该 skill 只用于内部增强回答，"
-                    "不要向用户暴露工具调用流程，也不要输出 <think> 标签或思考过程。"
-                    "只有在内部检索结果提供了可核验链接时，才给出主页或资料页链接。\n\n"
+                    "You have access to the web-research-homepages skill. Use it only to improve the answer. "
+                    "Do not expose tool plumbing, internal prompts, or <think> blocks. "
+                    "Only provide homepage/source links when the internal search results include verifiable URLs.\n\n"
                     f"{skill_instructions}"
                 ),
             ),
             ChatMessage(role="user", content=user_text),
             ChatMessage(
                 role="user",
-                content=f"内部检索结果如下，请用于增强回答，不要把这段内部提示原样复述给用户：\n{search_context}",
+                content=(
+                    "Internal web search results follow. Use them to answer the user, but do not quote this "
+                    f"internal instruction verbatim:\n{search_context}"
+                ),
             ),
-        ]
-
-    llm_response = await llm_registry.chat(
-        request.model_copy(update={"messages": augmented_messages, "tools": ["search_web"]})
+        ],
+        search_response,
     )
-    llm_response.content = _strip_think_blocks(llm_response.content)
-    llm_response.tool_calls = []
-    llm_response.references = []
-    return llm_response
+
+
+async def _run_model_with_tools(
+    request: ChatRequest,
+    max_rounds: int = 3,
+    model_outputs: list[dict[str, Any]] | None = None,
+) -> ChatResponse:
+    messages = list(request.messages)
+    executed_tool_calls: list[ToolCallRecord] = []
+
+    for _ in range(max_rounds):
+        response = await llm_registry.chat(request.model_copy(update={"messages": messages, "tools": ["search_web"]}))
+        if model_outputs is not None:
+            model_outputs.append(model_output_record(response))
+        if not response.tool_calls:
+            response.content = _strip_think_blocks(response.content)
+            response.tool_calls = executed_tool_calls
+            response.references = []
+            return response
+
+        assistant_tool_calls = [_tool_call_message(tool_call) for tool_call in response.tool_calls]
+        messages.append(ChatMessage(role="assistant", content=response.content or "", tool_calls=assistant_tool_calls))
+
+        for tool_call in response.tool_calls:
+            output = await execute_tool(tool_call.name, tool_call.input)
+            executed_tool_calls.append(tool_call.model_copy(update={"output": output}))
+            messages.append(
+                ChatMessage(
+                    role="tool",
+                    tool_call_id=tool_call.id,
+                    content=json.dumps(output, ensure_ascii=False),
+                )
+            )
+
+    final_response = await llm_registry.chat(request.model_copy(update={"messages": messages, "tools": []}))
+    if model_outputs is not None:
+        model_outputs.append(model_output_record(final_response))
+    final_response.content = _strip_think_blocks(final_response.content)
+    final_response.tool_calls = executed_tool_calls
+    final_response.references = []
+    return final_response
+
+
+async def run_chat(request: ChatRequest) -> ChatResponse:
+    user_text = _last_user_text(request)
+    should_search = should_use_web_search_skill(user_text)
+    search_response: WebSearchResponse | None = None
+    model_outputs: list[dict[str, Any]] | None = [] if should_search else None
+
+    if should_search:
+        augmented_messages, search_response = await _augment_with_search_skill(user_text)
+    else:
+        augmented_messages = list(request.messages)
+
+    response = await _run_model_with_tools(
+        request.model_copy(update={"messages": augmented_messages}),
+        model_outputs=model_outputs,
+    )
+    if should_search:
+        results = [item.model_dump() for item in search_response.results] if search_response else []
+        append_search_run_log(
+            user_text=user_text,
+            search_response=search_response
+            or WebSearchResponse(query=user_text, results=[], note="Search was not executed."),
+            model_outputs=model_outputs or [],
+            final_content=response.content,
+            recommended_homepage=_recommended_official_candidate(results),
+        )
+        response.tool_calls = []
+    return response

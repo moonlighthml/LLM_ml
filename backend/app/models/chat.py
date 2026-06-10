@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant", "tool"]
     content: str
+    tool_call_id: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 class ChatRequest(BaseModel):
@@ -21,8 +23,10 @@ class ChatRequest(BaseModel):
 
 class ToolCallRecord(BaseModel):
     name: str
+    id: str | None = None
     input: dict[str, Any] = Field(default_factory=dict)
     output: dict[str, Any] = Field(default_factory=dict)
+    raw_arguments: str | None = None
 
 
 class ChatResponse(BaseModel):

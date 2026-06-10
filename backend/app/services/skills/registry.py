@@ -5,6 +5,36 @@ from app.models.skills import ConfiguredSkill, SkillListResponse
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SKILLS_DIR = REPO_ROOT / "skills"
 
+WEB_SEARCH_ACTION_KEYWORDS = [
+    "搜索",
+    "检索",
+    "查找",
+    "浏览",
+    "核实",
+    "验证",
+    "研究",
+    "联网",
+    "search",
+    "find",
+    "look up",
+    "browse",
+    "verify",
+    "research",
+]
+WEB_SEARCH_ENTITY_KEYWORDS = [
+    "主页",
+    "官网",
+    "个人主页",
+    "公司官网",
+    "组织",
+    "品牌",
+    "人物",
+    "homepage",
+    "official",
+    "profile",
+    "company",
+]
+
 
 def _parse_skill_markdown(path: Path) -> ConfiguredSkill:
     text = path.read_text(encoding="utf-8")
@@ -21,32 +51,12 @@ def _parse_skill_markdown(path: Path) -> ConfiguredSkill:
 
     name = metadata.get("name", path.parent.name)
     description = metadata.get("description", "")
-    triggers = [
-        "搜索",
-        "检索",
-        "查找",
-        "浏览",
-        "核实",
-        "研究",
-        "主页",
-        "官网",
-        "个人主页",
-        "公司官网",
-        "look up",
-        "browse",
-        "verify",
-        "research",
-        "homepage",
-        "official",
-        "profile",
-    ]
-    tags = ["网页检索", "官方主页", "来源引用"]
     return ConfiguredSkill(
         name=name,
         description=description,
-        tags=tags,
+        tags=["web search", "official homepage", "sources"],
         tool="search_web",
-        triggers=triggers,
+        triggers=WEB_SEARCH_ACTION_KEYWORDS + WEB_SEARCH_ENTITY_KEYWORDS,
         instructions=body.strip(),
     )
 
@@ -67,12 +77,6 @@ def get_web_research_skill() -> ConfiguredSkill | None:
 
 def should_use_web_search_skill(text: str) -> bool:
     lowered = text.lower()
-    action_hit = any(
-        keyword in lowered
-        for keyword in ["搜索", "检索", "查找", "浏览", "核实", "研究", "search", "find", "browse", "verify", "research"]
-    )
-    entity_hit = any(
-        keyword in lowered
-        for keyword in ["主页", "官网", "个人", "公司", "组织", "品牌", "人物", "homepage", "official", "profile", "company"]
-    )
+    action_hit = any(keyword in lowered for keyword in WEB_SEARCH_ACTION_KEYWORDS)
+    entity_hit = any(keyword in lowered for keyword in WEB_SEARCH_ENTITY_KEYWORDS)
     return action_hit or entity_hit

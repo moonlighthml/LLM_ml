@@ -16,7 +16,8 @@ type ModelInfo = {
 
 type ChatResponse = {
   model_id: string;
-  content: string;
+  content?: string;
+  detail?: string;
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
@@ -29,7 +30,7 @@ export default function Home() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelId, setModelId] = useState("demo-local");
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
-  const [input, setInput] = useState("搜索科比的个人主页");
+  const [input, setInput] = useState("检索科比");
   const [isSending, setIsSending] = useState(false);
   const [connectionError, setConnectionError] = useState("");
 
@@ -69,9 +70,13 @@ export default function Home() {
         }),
       });
       const data = (await response.json()) as ChatResponse;
+      if (!response.ok) {
+        throw new Error(data.detail || `HTTP ${response.status}`);
+      }
       setMessages([...nextMessages, { role: "assistant", content: data.content || "没有返回内容。" }]);
-    } catch {
-      setMessages([...nextMessages, { role: "assistant", content: "后端暂时不可用，请确认 FastAPI 已启动。" }]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "未知错误";
+      setMessages([...nextMessages, { role: "assistant", content: `后端调用失败：${message}` }]);
     } finally {
       setIsSending(false);
     }
